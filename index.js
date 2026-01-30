@@ -115,7 +115,7 @@ app.get("/test-push", async (req, res) => {
 });
 
 // ===== ส่วนที่ 2: ตั้งเวลาให้เด้งอัตโนมัติ 17:35 (Auto Push) =====
-cron.schedule('35 17 * * *', async () => {
+cron.schedule('40 17 * * *', async () => {
   try {
     const userId = process.env.MY_USER_ID;
     if (userId) {
@@ -124,7 +124,7 @@ cron.schedule('35 17 * * *', async () => {
         { type: "text", text: "🔔 [แจ้งเตือนอัตโนมัติ] 17:35 น. รายงานสภาพอากาศเย็นนี้ครับ" },
         { type: "text", text: weatherData }
       ]);
-      console.log("Auto Alert at 17:35 Sent!");
+      console.log("Auto Alert at 17:40 Sent!");
     }
   } catch (err) {
     console.error("Cron Error:", err);
