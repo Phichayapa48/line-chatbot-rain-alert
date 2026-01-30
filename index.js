@@ -5,7 +5,7 @@ const { getRainForecast } = require("./weather");
 
 const app = express();
 
-// LINE config
+// LINE Configuration
 const lineConfig = {
   channelSecret: process.env.CHANNEL_SECRET,
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -13,46 +13,82 @@ const lineConfig = {
 
 const client = new line.Client(lineConfig);
 
-// webhook
+// Webhook Route
 app.post("/webhook", line.middleware(lineConfig), async (req, res) => {
   try {
     const events = req.body.events;
     await Promise.all(events.map(handleEvent));
     res.status(200).end();
   } catch (err) {
-    console.error(err);
+    console.error("Webhook Error:", err);
     res.status(500).end();
   }
 });
 
-// handle message
+// Main Handler Function
 async function handleEvent(event) {
-  if (event.type !== "message" || event.message.type !== "text") {
+  if (event.type !== "message") {
     return null;
   }
 
-  const text = event.message.text;
+  const messageType = event.message.type;
 
-  if (text.includes("ฝน")) {
-    const result = await getRainForecast();
+  // 1. จัดการข้อความตัวอักษร
+  if (messageType === "text") {
+    const text = event.message.text;
+
+    if (text.includes("ฝน") || text.includes("อากาศ")) {
+      const result = await getRainForecast();
+      return client.replyMessage(event.replyToken, {
+        type: "text",
+        text: result,
+      });
+    }
+
+    // กรณีพิมพ์อย่างอื่นมา
     return client.replyMessage(event.replyToken, {
       type: "text",
-      text: result,
+      text: "ลองถามว่า \"วันนี้ฝนตกไหม\" หรือ \"อากาศเป็นไง\" ได้นะคะ ☔️☀️",
     });
   }
 
+  // 2. จัดการรูปภาพ
+  if (messageType === "image") {
+    return client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "รับรูปไว้แล้วนะคะ 📷 แต่ตอนนี้บอทยังดูรูปไม่เป็นน้า ขออภัยค่า",
+    });
+  }
+
+  // 3. จัดการเสียง
+  if (messageType === "audio") {
+    return client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "ได้ยินเสียงแล้วค่า 🎧 แต่ตอนนี้ยังแปลความหมายไม่ได้น้า",
+    });
+  }
+
+  // 4. จัดการสติกเกอร์
+  if (messageType === "sticker") {
+    return client.replyMessage(event.replyToken, {
+      type: "text",
+      text: "สติกเกอร์น่ารักจัง! ส่งบ่อยๆ บอทเขินนะเนี่ย 😆",
+    });
+  }
+
+  // 5. ประเภทอื่นๆ (VDO, File, Location)
   return client.replyMessage(event.replyToken, {
     type: "text",
-    text: "พิมพ์ถามได้เลยนะคะ เช่น “วันนี้ฝนตกไหม” ☔️",
+    text: "ตอนนี้รองรับแค่ข้อความ รูป เสียง และสติกเกอร์นะคะ 💬",
   });
 }
 
-// health check (สำคัญตอน deploy)
+// Health Check สำหรับการ Deploy (เช่น บน Render หรือ Heroku)
 app.get("/", (req, res) => {
-  res.send("LINE Rain Alert Bot is running ☔️");
+  res.send("LINE Weather Bot is Active! ☔️");
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
